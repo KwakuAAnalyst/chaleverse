@@ -9,9 +9,11 @@ type ConnectionObject = {
 const connection: ConnectionObject = {};
 
 /**
- * Establishes a connection to MongoDB using Mongoose
- * Implements connection caching to prevent multiple connections in development
- * @returns Promise<void>
+ * Establishes a connection to MongoDB and updates the module's connection cache.
+ *
+ * Throws an Error if the MONGODB_URI environment variable is not defined.
+ * On connection failure the original error is rethrown; if NODE_ENV is "production",
+ * the process exits with code 1 on failure.
  */
 async function connectToDatabase(): Promise<void> {
   // Check if we already have a connection to the database
@@ -54,9 +56,9 @@ async function connectToDatabase(): Promise<void> {
 }
 
 /**
- * Disconnects from the MongoDB database
- * Useful for cleanup in serverless environments or testing
- * @returns Promise<void>
+ * Close the active Mongoose connection if one exists.
+ *
+ * Closes the MongoDB connection and updates the internal connection state; no action is taken when not connected.
  */
 async function disconnectFromDatabase(): Promise<void> {
   if (connection.isConnected) {
@@ -67,19 +69,19 @@ async function disconnectFromDatabase(): Promise<void> {
 }
 
 /**
- * Gets the current connection status
- * @returns boolean - true if connected, false otherwise
+ * Determines whether a MongoDB connection is currently established.
+ *
+ * @returns `true` if connected to MongoDB, `false` otherwise.
  */
 function isConnected(): boolean {
   return connection.isConnected === 1;
 }
 
 /**
- * Enhanced connection function with retry logic
- * Useful for production environments where network issues might occur
- * @param retries - Number of retry attempts (default: 3)
- * @param delay - Delay between retries in milliseconds (default: 5000)
- * @returns Promise<void>
+ * Attempts to establish a MongoDB connection, retrying on failure with a configurable number of attempts and delay.
+ *
+ * @param retries - Maximum number of connection attempts
+ * @param delay - Milliseconds to wait between attempts
  */
 async function connectWithRetry(retries: number = 3, delay: number = 5000): Promise<void> {
   for (let i = 0; i < retries; i++) {
